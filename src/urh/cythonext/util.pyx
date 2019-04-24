@@ -185,7 +185,7 @@ cpdef uint64_t cached_crc(uint64_t[:] cache, uint8_t bits, uint8_t[:] inpt, uint
                   | ((crcv << 8)  & <uint64_t>0x000000FF00000000) | ((crcv >> 8)  & <uint64_t>0x00000000FF000000)
     return crcv & crc_mask
 
-cpdef tuple get_crc_datarange(uint8_t[:] inpt, uint8_t[:] polynomial, uint64_t vrfy_crc_start, uint8_t[:] start_value, uint8_t[:] final_xor, bool lsb_first, bool reverse_polynomial, bool reverse_all, bool little_endian):
+cpdef tuple get_crc_datarange(uint64_t[:] cache, uint8_t[:] inpt, uint8_t[:] polynomial, uint64_t vrfy_crc_start, uint8_t[:] start_value, uint8_t[:] final_xor, bool lsb_first, bool reverse_polynomial, bool reverse_all, bool little_endian):
     cdef uint32_t len_inpt = len(inpt), poly_order = len(polynomial)
     cdef uint8_t j = 0, len_crc = poly_order - 1
 
@@ -251,7 +251,8 @@ cpdef tuple get_crc_datarange(uint8_t[:] inpt, uint8_t[:] polynomial, uint64_t v
 
     # Test data range from 0...start_crc until start_crc-1...start_crc
     # Compute start value
-    crcvalue = crc(inpt[:data_end], polynomial, start_value, final_xor, lsb_first, reverse_polynomial, reverse_all, little_endian)
+    #crcvalue = crc(inpt[:data_end], polynomial, start_value, final_xor, lsb_first, reverse_polynomial, reverse_all, little_endian)
+    crcvalue = cached_crc(cache, 8, inpt[:data_end], polynomial, start_value, final_xor, lsb_first, reverse_polynomial, reverse_all, little_endian)
     try:
         if vrfy_crc_int == crcvalue:
             return 0, data_end

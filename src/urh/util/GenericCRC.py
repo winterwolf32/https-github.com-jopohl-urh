@@ -134,7 +134,7 @@ class GenericCRC(object):
 
     def get_parameters(self):
         return self.polynomial, self.start_value, self.final_xor, \
-               self.lsb_first, self.reverse_polynomial, self.reverse_all, self.little_endian
+               self.lsb_first, self.reverse_polynomial, self.reverse_all, self.little_endian, self.STANDARD_CHECKSUMS[self.caption]["cache"]
 
     def crc(self, inpt):
         result = c_util.crc(array.array("B", inpt),
@@ -238,7 +238,7 @@ class GenericCRC(object):
         return result
 
     def set_individual_parameters(self, polynomial, start_value=0, final_xor=0, ref_in=False, ref_out=False,
-                                  little_endian=False, reverse_polynomial=False):
+                                  little_endian=False, reverse_polynomial=False, **kwargs):
         # Set polynomial from hex or bit array
         old = self.polynomial
         if isinstance(polynomial, str):
@@ -352,6 +352,9 @@ class GenericCRC(object):
             if isinstance(final_xor, int):
                 cls.STANDARD_CHECKSUMS[name]["final_xor"] = array.array("B", [final_xor] * n)
 
+            if "cache" not in cls.STANDARD_CHECKSUMS[name]:
+                cls.STANDARD_CHECKSUMS[name]["cache"] = c_util.calculate_cache(polynomial)
+
     def guess_all(self, bits, trash_max=7, ignore_positions: set = None):
         """
 
@@ -403,7 +406,8 @@ class GenericCRC(object):
                                        key=lambda x: len(x[1]["polynomial"]),
                                        reverse=True):
             self.caption = name
-            data_begin, data_end = c_util.get_crc_datarange(inpt,
+            data_begin, data_end = c_util.get_crc_datarange(parameters["cache"],
+                                                            inpt,
                                                             parameters["polynomial"],
                                                             max(0,
                                                                 len(inpt) - trash - len(parameters["polynomial"])) + 1,

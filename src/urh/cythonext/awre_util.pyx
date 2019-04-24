@@ -5,7 +5,7 @@ import numpy as np
 from libcpp cimport bool
 from array import array
 
-from urh.cythonext.util import crc
+from urh.cythonext.util import crc, cached_crc
 
 cpdef np.ndarray[np.uint8_t, ndim=3] build_xor_matrix(list bitvectors):
     cdef unsigned int maximum = 0
@@ -153,7 +153,8 @@ cpdef set check_crc_for_messages(unsigned long start, list message_indices, list
                                  unsigned char[:] crc_polynomial, unsigned char[:] crc_start_value,
                                  unsigned char[:] crc_final_xor,
                                  bool crc_lsb_first, bool crc_reverse_polynomial,
-                                 bool crc_reverse_all, bool crc_little_endian):
+                                 bool crc_reverse_all, bool crc_little_endian,
+                                 unsigned long long[:] crc_cache):
     """
     Check a configurable subset of bitvectors for a matching CRC and return the indices of the 
     vectors who match the CRC with the given parameters
@@ -171,7 +172,7 @@ cpdef set check_crc_for_messages(unsigned long start, list message_indices, list
         crc_input = bits[data_start:data_stop]
         #check = int("".join(map(str, bits[crc_start:crc_stop])), 2)
         check = bit_array_to_number(bits[crc_start:crc_stop], crc_stop - crc_start)
-        if crc(crc_input, crc_polynomial, crc_start_value, crc_final_xor,
+        if cached_crc(crc_cache, 8, crc_input, crc_polynomial, crc_start_value, crc_final_xor,
                crc_lsb_first, crc_reverse_polynomial,
                crc_reverse_all, crc_little_endian) == check:
             result.add(index)
